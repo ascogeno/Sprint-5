@@ -5,11 +5,7 @@ public class RoomManager : MonoBehaviour
 {
     [Header("Wall Display")]
     public Renderer wallRenderer;
-
-    [Tooltip("Material used when showing normal images")]
     public Material imageMaterial;
-
-    [Tooltip("Material used when showing video via Render Texture")]
     public Material videoMaterial;
 
     [Header("Video")]
@@ -22,7 +18,22 @@ public class RoomManager : MonoBehaviour
 
     private void Start()
     {
+        if (videoPlayer != null)
+        {
+            videoPlayer.playOnAwake = false;
+            videoPlayer.isLooping = true;
+            videoPlayer.prepareCompleted += OnVideoPrepared;
+        }
+
         ShowCurrentItem();
+    }
+
+    private void OnDestroy()
+    {
+        if (videoPlayer != null)
+        {
+            videoPlayer.prepareCompleted -= OnVideoPrepared;
+        }
     }
 
     public void ShiftRoom()
@@ -44,29 +55,29 @@ public class RoomManager : MonoBehaviour
 
         WallDisplayItem item = items[currentIndex];
 
-        // Stop previous video if one was playing
-        if (videoPlayer != null && videoPlayer.isPlaying)
+        if (videoPlayer != null)
         {
             videoPlayer.Stop();
+            videoPlayer.clip = null;
         }
 
-        // VIDEO MODE
         if (item.videoClip != null)
         {
             wallRenderer.material = videoMaterial;
-
             videoPlayer.clip = item.videoClip;
-            videoPlayer.isLooping = true;
-            videoPlayer.Play();
-
+            videoPlayer.Prepare();
             return;
         }
 
-        // IMAGE MODE
         if (item.imageTexture != null)
         {
             wallRenderer.material = imageMaterial;
             wallRenderer.material.mainTexture = item.imageTexture;
         }
+    }
+
+    private void OnVideoPrepared(VideoPlayer source)
+    {
+        source.Play();
     }
 }
